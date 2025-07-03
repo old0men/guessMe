@@ -4,12 +4,40 @@ import { useSearchParams, useRouter } from 'next/navigation';
 
 export default function WaitingRoom() {
   const [players, setPlayers] = useState([]);
+  const [roomInfo, setRoomInfo] = useState(null);
   const [connectionStatus, setConnectionStatus] = useState('Connecting...');
+  const [currentUser, setCurrentUser] = useState('');
   const searchParams = useSearchParams();
   const router = useRouter();
   const gameCode = searchParams.get('code');
+  const API_URL = 'http://localhost:8080/api';
   const WS_URL = 'ws://localhost:8080';
 
+  // Spielername aus LocalStorage oder Session
+  useEffect(() => {
+    const storedUser = localStorage.getItem('currentPlayer') || 'Gast';
+    setCurrentUser(storedUser);
+  }, []);
+
+  // API-Abfrage für Rauminfos
+  useEffect(() => {
+    const fetchRoomData = async () => {
+      try {
+        const res = await fetch(`${API_URL}/rooms/${gameCode}`);
+        if (!res.ok) throw new Error('Raum nicht gefunden');
+        const data = await res.json();
+        setRoomInfo(data);
+        setPlayers(data.players);
+      } catch (error) {
+        console.error('API Fehler:', error);
+        router.push('/?error=room_not_found');
+      }
+    };
+
+    if (gameCode) fetchRoomData();
+  }, [gameCode]);
+
+  // WebSocket für Echtzeit-Updates
   useEffect(() => {
     let ws;
     const connect = () => {
@@ -18,10 +46,8 @@ export default function WaitingRoom() {
       ws.onopen = () => {
         setConnectionStatus('Connected');
         ws.send(JSON.stringify({
-          type: 'join',
-          host: gameCode,
-          username: 'TempUser',
-          role: 'observer'
+          type: 'subscribe',
+          room: gameCode
         }));
       };
 
@@ -97,7 +123,11 @@ export default function WaitingRoom() {
             {players.map((player, index) => (
               <div 
                 key={index}
-                className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-colors"
+                className={`flex items-center justify-between p-3 rounded-lg border transition-colors ${
+                  player === currentUser
+                    ? 'bg-accent/20 border-accent'
+                    : 'bg-white/5 border-white/10 hover:bg-white/10'
+                }`}
               >
                 <div className="flex items-center gap-3">
                   <div className="avatar placeholder">
@@ -105,7 +135,12 @@ export default function WaitingRoom() {
                       {player[0].toUpperCase()}
                     </div>
                   </div>
-                  <span className="text-lg">{player}</span>
+                  <span className="text-lg">
+                    {player}
+                    {player === currentUser && (
+                      <span className="ml-2 text-sm text-accent">(Du)</span>
+                    )}
+                  </span>
                 </div>
                 <div className="badge badge-outline">Ready</div>
               </div>

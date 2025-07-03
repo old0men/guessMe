@@ -62,6 +62,8 @@ export default function Home() {
       setError('Verbindungsfehler zum Server');
       setLoading({ ...loading, [role]: false });
     };
+
+    localStorage.setItem('currentPlayer', formData[role].name);
   };
 
   return (

@@ -2,6 +2,7 @@ const express = require('express');
 const path = require('path');
 const http = require('http');
 const WebSocket = require('ws');
+const cors = require('cors');
 
 const app = express();
 const server = http.createServer(app);
@@ -12,6 +13,9 @@ const rooms = {}; // { hostId: { password, players: [] } }
 
 // Serve static files from "public" directory
 app.use(express.static(path.join(__dirname, 'public')));
+
+// CORS aktivieren
+app.use(cors());
 
 // Neue API-Endpoints vor dem WebSocket-Code
 app.get('/api/rooms', (req, res) => {
