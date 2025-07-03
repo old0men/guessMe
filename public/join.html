@@ -6,7 +6,7 @@
         <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-<h2>Waiting Room</h2>
+<h2>👥 Waiting Room</h2>
 <p id="roleInfo"></p>
 <ul id="playerList"></ul>
 
@@ -17,7 +17,7 @@
     const password = localStorage.getItem("password");
 
     document.getElementById("roleInfo").innerText = isHost
-        ? "You are hosting."
+        ? "You are the host. Waiting for players to join..."
         : `Joined host: ${host}`;
 
     const ws = new WebSocket(`ws://${window.location.hostname}:8080`);
@@ -37,9 +37,10 @@
         if (data.type === "updatePlayers") {
             const list = document.getElementById("playerList");
             list.innerHTML = "";
+
             data.players.forEach(p => {
                 const li = document.createElement("li");
-                li.textContent = p;
+                li.textContent = p === username ? `${p} (You)` : p;
                 list.appendChild(li);
             });
         }
