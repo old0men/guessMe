@@ -2,54 +2,52 @@
 <html lang="en">
 <head>
         <meta charset="UTF-8" />
-        <title>Login to Host</title>
-        <style>
-            body { font-family: sans-serif; margin: 2rem; }
-            input, button { margin: 0.5rem 0; padding: 0.5rem; width: 300px; }
-            #status { margin-top: 1rem; font-weight: bold; }
-        </style>
+        <title>guessMe - Home</title>
+        <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-<h2>Connect to Host</h2>
-<input type="text" id="host" placeholder="Host (e.g. localhost)" />
-<br />
-<input type="password" id="password" placeholder="Password" />
-<br />
-<button onclick="connect()">Connect</button>
-<div id="status"></div>
+<h1 id="title">guessMe</h1>
+
+<div class="buttons">
+        <button onclick="openJoinOverlay()">Join</button>
+        <button onclick="hostRoom()">Host</button>
+        <button onclick="openSettings()">⚙ Settings</button>
+</div>
+
+<!-- Join Overlay -->
+<div id="joinOverlay" class="overlay hidden">
+        <div class="modal">
+                <h2>Join a Host</h2>
+                <input type="text" id="joinHost" placeholder="Host (e.g. localhost)" />
+                <input type="password" id="joinPassword" placeholder="Password" />
+                <button onclick="submitJoin()">Join</button>
+                <button onclick="closeJoinOverlay()">Cancel</button>
+        </div>
+</div>
+
+<!-- Settings Overlay -->
+<div id="settingsOverlay" class="overlay hidden">
+        <div class="modal">
+                <h2>Set Username</h2>
+                <input type="text" id="usernameInput" placeholder="Enter username" />
+                <button onclick="saveUsername()">Save</button>
+                <button onclick="closeSettings()">Cancel</button>
+        </div>
+</div>
 
 <script>
-    let ws;
+    const username = localStorage.getItem("username") || `User_${Math.floor(Math.random() * 10000)}`;
+    localStorage.setItem("username", username);
 
-    function connect() {
-        const host = document.getElementById('host').value;
-        const password = document.getElementById('password').value;
-        const status = document.getElementById('status');
-
-        ws = new WebSocket(`ws://${window.location.host}`);
-
-        ws.onopen = () => {
-            ws.send(JSON.stringify({ type: 'auth', host, password }));
-        };
-
-        ws.onmessage = (msg) => {
-            const response = JSON.parse(msg.data);
-            if (response.type === 'auth') {
-                if (response.success) {
-                    status.textContent = '✅ Connected. Redirecting to game...';
-                    setTimeout(() => {
-                        window.location.href = '/game.html';
-                    }, 1000);
-                } else {
-                    status.textContent = '❌ ' + response.message;
-                }
-            }
-        };
-
-        ws.onerror = () => {
-            status.textContent = '⚠️ WebSocket error.';
-        };
+    function openJoinOverlay() {
+        document.getElementById("joinOverlay").classList.remove("hidden");
     }
-</script>
-</body>
-</html>
+
+    function closeJoinOverlay() {
+        document.getElementById("joinOverlay").classList.add("hidden");
+    }
+
+    function submitJoin() {
+        const host = document.getElementById("joinHost").value;
+        const password = document.getElementById("joinPassword").value;
+        localStorage.setItem("host

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <meta charset="UTF-8" />
+        <title>Waiting Room</title>
+        <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<h2>Waiting Room</h2>
+<p id="roleInfo"></p>
+<ul id="playerList"></ul>
+
+<script>
+    const isHost = localStorage.getItem("isHost") === "true";
+    const username = localStorage.getItem("username");
+    const host = localStorage.getItem("host");
+    const password = localStorage.getItem("password");
+
+    document.getElementById("roleInfo").innerText = isHost
+        ? "You are hosting."
+        : `Joined host: ${host}`;
+
+    const ws = new WebSocket(`ws://${window.location.hostname}:8080`);
+
+    ws.onopen = () => {
+        ws.send(JSON.stringify({
+            type: "join",
+            username,
+            host,
+            password,
+            role: isHost ? "host" : "client"
+        }));
+    };
+
+    ws.onmessage = (msg) => {
+        const data = JSON.parse(msg.data);
+        if (data.type === "updatePlayers") {
+            const list = document.getElementById("playerList");
+            list.innerHTML = "";
+            data.players.forEach(p => {
+                const li = document.createElement("li");
+                li.textContent = p;
+                list.appendChild(li);
+            });
+        }
+    };
+</script>
+</body>
+</html>
