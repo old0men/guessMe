@@ -50,4 +50,43 @@
     function submitJoin() {
         const host = document.getElementById("joinHost").value;
         const password = document.getElementById("joinPassword").value;
-        localStorage.setItem("host
+        localStorage.setItem("host", host);
+        localStorage.setItem("password", password);
+        window.location.href = "/join.html";
+    }
+
+    function hostRoom() {
+        const password = prompt("Set a password for your room:");
+        if (!password) {
+            alert("Password is required to host a room.");
+            return;
+        }
+
+        localStorage.setItem("isHost", "true");
+        localStorage.setItem("password", password);
+
+        // You can use the username as host ID (or generate a unique ID if needed)
+        localStorage.setItem("host", localStorage.getItem("username"));
+
+        window.location.href = "/join.html";
+    }
+
+    function openSettings() {
+        document.getElementById("settingsOverlay").classList.remove("hidden");
+    }
+
+    function closeSettings() {
+        document.getElementById("settingsOverlay").classList.add("hidden");
+    }
+
+    function saveUsername() {
+        const name = document.getElementById("usernameInput").value.trim();
+        if (name) {
+            localStorage.setItem("username", name);
+            alert("Username saved!");
+        }
+        closeSettings();
+    }
+</script>
+</body>
+</html>
