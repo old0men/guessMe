@@ -15,43 +15,66 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // Handle WebSocket connections
 wss.on('connection', (ws) => {
-    ws.on('message', (msg) => {
+    ws.on('message', (message) => {
         let data;
         try {
-            data = JSON.parse(msg);
+            data = JSON.parse(message);
         } catch {
-            return ws.send(JSON.stringify({ type: 'error', message: 'Invalid JSON' }));
+            ws.send(JSON.stringify({ type: 'error', message: 'Invalid JSON' }));
+            return;
         }
 
         if (data.type === 'join') {
             const { username, host, password, role } = data;
 
             if (role === 'host') {
-                rooms[username] = { password, players: [username] };
+                // Host creates the room with password and players list
+                rooms[username] = {
+                    password,
+                    players: [username], // Host is the first player
+                };
                 ws.roomHost = username;
             } else {
+                // Client wants to join a host’s room
                 const room = rooms[host];
-                if (room && room.password === password) {
-                    room.players.push(username);
-                    ws.roomHost = host;
-                } else {
-                    return ws.send(JSON.stringify({ type: 'error', message: 'Invalid host or password' }));
+                if (!room) {
+                    return ws.send(JSON.stringify({ type: 'error', message: 'Room does not exist' }));
                 }
+                if (room.password !== password) {
+                    return ws.send(JSON.stringify({ type: 'error', message: 'Incorrect password' }));
+                }
+                if (!room.players.includes(username)) {
+                    room.players.push(username);
+                }
+                ws.roomHost = host;
             }
 
-            // Broadcast updated player list
+            // Send updated player list to everyone in the room
             const room = rooms[ws.roomHost];
-            wss.clients.forEach(client => {
+            wss.clients.forEach((client) => {
                 if (client.readyState === WebSocket.OPEN && client.roomHost === ws.roomHost) {
-                    client.send(JSON.stringify({
-                        type: 'updatePlayers',
-                        players: room.players
-                    }));
+                    client.send(
+                        JSON.stringify({
+                            type: 'updatePlayers',
+                            players: room.players,
+                        })
+                    );
                 }
             });
         }
     });
+
+    ws.on('close', () => {
+        // Optional: remove player from rooms on disconnect
+        if (!ws.roomHost) return;
+        const room = rooms[ws.roomHost];
+        if (!room) return;
+
+        // Remove player by ws.username if you track it, or skip if not stored.
+        // You can implement cleanup if you store username on ws.
+    });
 });
+
 
 // Start the HTTP/WebSocket server
 server.listen(PORT, () => {
